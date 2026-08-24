@@ -47,3 +47,15 @@ print("ROC AUC:", roc_auc_score(y_test, y_proba))
 
 joblib.dump(model, "../models/churn_model.pkl")
 print("Model saved.")
+
+import shap
+import matplotlib.pyplot as plt
+
+print("Computing SHAP values...")
+explainer = shap.TreeExplainer(model)
+shap_values = explainer.shap_values(X_test)
+
+shap.summary_plot(shap_values, X_test, show=False)
+plt.tight_layout()
+plt.savefig("../models/shap_summary.png")
+print("SHAP plot saved to models/shap_summary.png")
