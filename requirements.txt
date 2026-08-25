@@ -1,7 +1,10 @@
+pandas
+sqlalchemy
+pymysql
 scikit-learn
 xgboost
-joblib
-matplotlib
 shap
+matplotlib
 streamlit
 plotly
+joblib
