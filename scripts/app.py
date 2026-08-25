@@ -1,18 +1,17 @@
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 import streamlit as st
 import pandas as pd
 from sqlalchemy import create_engine
 
 st.set_page_config(page_title="E-commerce Churn Analytics", layout="wide")
 
-engine = create_engine("mysql+pymysql://root:root1234@localhost/ecommerce")
-
 @st.cache_data
 def load_data():
-    rfm = pd.read_sql("""
-        SELECT r.*, f.avg_delivery_days, f.category_diversity, f.avg_installments
-        FROM customer_rfm r
-        JOIN customer_features f ON r.customer_unique_id = f.customer_unique_id
-    """, engine)
+    rfm = pd.read_csv(os.path.join(BASE_DIR, "..", "data", "processed", "customer_rfm.csv"))
+    features = pd.read_csv(os.path.join(BASE_DIR, "..", "data", "processed", "customer_features.csv"))
+    rfm = rfm.merge(features, on="customer_unique_id")
     rfm["churned"] = (rfm["recency_days"] > 180).astype(int)
     rfm["avg_order_value"] = rfm["monetary"] / rfm["frequency"]
     rfm["avg_delivery_days"] = rfm["avg_delivery_days"].fillna(rfm["avg_delivery_days"].median())
@@ -68,7 +67,7 @@ import plotly.express as px
 with tab2:
     st.subheader("Cohort Retention")
 
-    cohort_df = pd.read_sql("SELECT * FROM customer_cohorts", engine)
+    cohort_df = pd.read_csv(os.path.join(BASE_DIR, "..", "data", "processed", "customer_cohorts.csv"))
 
     cohort_pivot = cohort_df.pivot_table(
         index="cohort_month", columns="month_number", values="active_customers"
@@ -93,7 +92,7 @@ with tab2:
 with tab3:
     st.subheader("Monthly Revenue Trend")
 
-    revenue_df = pd.read_sql("SELECT * FROM monthly_revenue", engine)
+    revenue_df = pd.read_csv(os.path.join(BASE_DIR, "..", "data", "processed", "monthly_revenue.csv"))
 
     col1, col2 = st.columns(2)
     with col1:
@@ -110,7 +109,7 @@ with tab4:
 
     import joblib
 
-    model = joblib.load("../models/churn_model.pkl")
+    model = joblib.load(os.path.join(BASE_DIR, "..", "models", "churn_model.pkl"))
 
     feature_cols = ["frequency", "monetary", "avg_order_value",
                      "avg_delivery_days", "category_diversity", "avg_installments"]
@@ -129,4 +128,4 @@ with tab4:
     )
 
     st.write("### What Drives Churn — SHAP Summary")
-    st.image("../models/shap_summary.png", use_container_width=True)
+    st.image(os.path.join(BASE_DIR, "..", "models", "shap_summary.png"), use_container_width=True)
